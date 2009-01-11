@@ -25,11 +25,13 @@ as.Formula.formula <- function(x, ...) {
     y <- NULL
     rhs <- x[[2]]
   }
-  if (length(z) == 3) zz <- z[[3]] else zz <- z[[2]]
+  zz <- if (length(z) == 3) z[[3]] else z[[2]]
   #Z# should we throw a warning if there is a left-hand side?
   
   #Z# avoid deparsing and parsing again
-  rval <- paste(if(!is.null(y)) deparse(y)," ~ ", deparse(rhs), "|", deparse(zz))
+  rval <- paste(if(!is.null(y)) paste(deparse(y), collapse = ""),
+    " ~ ", paste(deparse(rhs), collapse = ""),
+    "|", paste(deparse(zz), collapse = ""))
 
   as.Formula(rval)
 }
@@ -115,8 +117,9 @@ update.Formula <- function(object, new,...){
   new.second <- update(old.second, new.second)
   
   #Z# avoid deparsing and parsing again
-  result <- paste(deparse(old[[2]]), "~", deparse(new.first[[2]]),
-    "|", deparse(new.second[[2]]))
+  result <- paste(paste(deparse(old[[2]]), collapse = ""),
+    "~", paste(deparse(new.first[[2]]), collapse = ""),
+    "|", paste(deparse(new.second[[2]]), collapse = ""))
   as.Formula(result)
 }
 
