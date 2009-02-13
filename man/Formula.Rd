@@ -10,13 +10,17 @@
 \alias{as.Formula}
 \alias{as.Formula.default}
 \alias{as.Formula.formula}
+\alias{has.intercept}
+\alias{has.intercept.formula}
+\alias{has.intercept.Formula}
+
 \title{Extended Formulas}
 
 \description{
-  The new class \code{Formula} extends the base class \code{\link[stats]{formula}}.
-  Currently, the only extenseion are two-part formulas, further extensions are
-  planned.
-}
+
+  The new class \code{Formula} extends the base class
+  \code{\link[stats]{formula}}.  Currently, the only extenseion are
+  two-part formulas, further extensions are planned.  }
 
 \usage{
 Formula(object)
@@ -29,8 +33,13 @@ is.Formula(object)
 \method{terms}{Formula}(x, \dots, part = "first", response = NULL)
 \method{update}{Formula}(object, new, \dots)
 \method{model.matrix}{Formula}(object, \dots, part = "first")
-\method{model.frame}{Formula}(formula, \dots, part = "first", response = NULL)
+\method{model.frame}{Formula}(formula, \dots, part = NULL, response = NULL)
 \method{length}{Formula}(x)
+
+has.intercept(object, ...)
+\method{has.intercept}{formula}(object, ...)
+\method{has.intercept}{Formula}(object, part = "first", ...)
+
 }
 
 \arguments{

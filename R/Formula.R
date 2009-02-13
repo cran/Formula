@@ -82,27 +82,28 @@ formula.Formula <- function(x,
      })
 }
 
-terms.Formula <- function(x, ..., part = "first", response = NULL){
+terms.Formula <- function(x, ..., part = "first", response = NULL) {
   if(is.null(response))
     response <- attr(terms(structure(x, class = "formula")), "response") == 1L
   form <- formula(x, part = part, response = response)
   terms(form, ...)
 }
 
-model.frame.Formula <- function(formula, ..., part = "first", response = NULL){
+model.frame.Formula <- function(formula, ..., part = NULL, response = NULL) {
   if (is.null(response)) response <- attr(terms(formula), "response") == 1L
+  if (is.null(part)) part <- ifelse(length(formula) == 2L, "both", "first")
   form <- formula(formula, part = part, response = response)
   model.frame(form, ...)
 }
 
-model.matrix.Formula <- function(object, ..., part = "first"){
+model.matrix.Formula <- function(object, ..., part = "first") {
   form <- formula(object, part = part)
   model.matrix(form, ...)
   #Z# Should we call model.frame(form, ...) first to avoid missingness problems?
 }
   
 
-update.Formula <- function(object, new,...){
+update.Formula <- function(object, new,...) {
   old <- object
   if (!is.Formula(old)) old <- Formula(old)
   if (!is.Formula(new)) new <- Formula(new)
@@ -141,4 +142,18 @@ length.Formula <- function(x) {
     lform <- 1
   }
   lform
+}
+
+
+has.intercept <- function(object, ...) {
+  UseMethod("has.intercept")
+}
+
+has.intercept.formula <- function(object, ...){
+  attr(terms(object), "intercept") == 1L
+}
+
+has.intercept.Formula <- function(object, part = "first", ...) {
+  formula <- formula(object, part = part)
+  attr(terms(formula), "intercept") == 1L
 }
