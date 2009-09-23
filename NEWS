@@ -1,9 +1,37 @@
+Changes in Version 0.2-0
+
+  o Major revision (not fully backward compatible) to enable support
+    for multiple responses and multiple parts on the right-hand side
+    such as
+      y1 | y2 ~ x
+      y1 + y2 ~ x1 + x2 | z1
+      y ~ u1 + u2 | v1 | x1 + x2
+    and combinations of these.
+        
+  o Formula objects now consist of the original formula plus two
+    attributes "lhs" and "rhs" that contain the parts of the decomposed
+    left- and right-hand side, respectively.
+
+  o Most methods take arguments "lhs" and "rhs" which allow selection
+    of the desired parts on the left- and right-hand side respectively,
+    e.g., in a model.frame() or model.matrix().
+    
+  o The previous arguments response = TRUE/FALSE and
+    part = "first"/"second"/"both" were not flexible enough anymore
+    and have been deprecated. Use the streamlined lhs/rhs arguments
+    instead.
+
+  o vignette("Formula", package = "Formula") illustrates usage of
+    the tools provided by the package and explains the ideas underlying
+    its implementation.
+
+
 Changes in Version 0.1-3
 
   o added CITATION file.
 
   o added a has.intercept function with methods for formula and
-    Formula object.
+    Formula objects.
 
   o change the default value for model.frame.Formula: "both" for a
     two-part formula and "first" otherwise.

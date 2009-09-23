@@ -1,125 +1,137 @@
 \name{Formula}
+
 \alias{Formula}
-\alias{is.Formula}
 \alias{formula.Formula}
-\alias{terms.Formula}
-\alias{update.Formula}
-\alias{model.matrix.Formula}
-\alias{model.frame.Formula}
-\alias{length.Formula}
 \alias{as.Formula}
 \alias{as.Formula.default}
 \alias{as.Formula.formula}
-\alias{has.intercept}
-\alias{has.intercept.formula}
-\alias{has.intercept.Formula}
+\alias{as.Formula.Formula}
+\alias{is.Formula}
+\alias{print.Formula}
+\alias{update.Formula}
+\alias{length.Formula}
 
-\title{Extended Formulas}
+\title{Extended Formulas: Multiple Responses and Multiple Regressor Parts}
 
 \description{
-
   The new class \code{Formula} extends the base class
-  \code{\link[stats]{formula}}.  Currently, the only extenseion are
-  two-part formulas, further extensions are planned.  }
+  \code{\link[stats]{formula}} by allowing for multiple responses
+  and multiple parts of regressors.
+}
 
 \usage{
 Formula(object)
 
+\method{formula}{Formula}(x, lhs = NULL, rhs = NULL,
+  collapse = FALSE, update = FALSE, drop = TRUE, \dots)
+
 as.Formula(x, \dots)
-\method{as.Formula}{default}(x, \dots)
 is.Formula(object)
-
-\method{formula}{Formula}(x, part = c("first", "second", "both"), response = NULL, \dots)
-\method{terms}{Formula}(x, \dots, part = "first", response = NULL)
-\method{update}{Formula}(object, new, \dots)
-\method{model.matrix}{Formula}(object, \dots, part = "first")
-\method{model.frame}{Formula}(formula, \dots, part = NULL, response = NULL)
-\method{length}{Formula}(x)
-
-has.intercept(object, ...)
-\method{has.intercept}{formula}(object, ...)
-\method{has.intercept}{Formula}(object, part = "first", ...)
-
 }
 
 \arguments{
-  \item{object, x, formula}{an object. For \code{Formula} it needs to be a
+  \item{object, x}{an object. For \code{Formula} it needs to be a
     \code{formula} object.}
-  \item{part}{character specifying the part of the right hand side of the formula to use:
-    \code{"first"}, \code{"second"} or \code{"both"}.}
-  \item{response}{logical. Should the response be include in the formula?}
-  \item{new}{a formula giving a template which specifies how to update.}
+  \item{lhs, rhs}{indexes specifying which elements of the left- and
+    right-hand side, respectively, should be employed. \code{NULL}
+    corresponds to all parts, \code{0} to none.}
+  \item{collapse}{logical. Should multiple parts (if any) be collapsed
+    to a single part (essentially by replacing the \code{|} operator
+    by \code{+})? \code{collapse} can be a vector of length 2,
+    corresponding for different handling of left- and right-hand side
+    respectively.}
+  \item{update}{logical. Only used if \code{all(collapse)}. Should the
+    resulting formula be updated to remove possibly redundant terms
+    occuring in multiple terms?}
+  \item{drop}{logical. Should the \code{Formula} class be dropped?
+    If \code{TRUE} (the default) a \code{formula} is returned, if
+    \code{FALSE} the corresponding \code{Formula} is returned.}
   \item{\dots}{further arguments.}
-}
-
-\value{
-  \code{Formula} returns an object of class \code{Formula}
-  which inherits from \code{formula}.
 }
 
 \details{  
   \code{Formula} objects extend the basic \code{formula} objects.
-  Currently, the only extension implemented are two-part formulas
-  of type: \code{y ~ x1 + x2 | z1 + z2 + z3}. However, \pkg{Formula}
-  is under development and features on the wishlist for future
-  versions include multi-part formulas
-  (\code{y ~ x1 + x2 | u1 + u2 + u3 | v1 + v2}) and multiple response
-  formulas (\code{y1 + y2 ~ x1 + x2 + x3}). This might result in
-  changes of the interface of some methods in future versions.
+  These extensions include multi-part formulas such as
+  \code{y ~ x1 + x2 | u1 + u2 + u3 | v1 + v2}, multiple response
+  formulas \code{y1 + y2 ~ x1 + x2 + x3}, multi-part responses
+  such as \code{y1 | y2 + y3 ~ x}, and combinations of these.
   
-  Currently, a \code{Formula} is a formula for which the right hand
-  side has two parts separated by a pipe sign. The \code{Formula}
-  function coerce a formula to a \code{Formula} object just
-  by modifying the class attribute.
+  The \code{Formula} creates a \code{Formula} object from a \code{formula}
+  which can have the \code{|} operator on the left- and/or right-hand
+  side (LHS and/or RHS). Essentially, it stores the original \code{formula}
+  along with attribute lists containing the decomposed parts for the LHS
+  and RHS, respectively.
+
+  The main motivation for providing the \code{Formula} class is to be
+  able to conveniently compute model frames and model matrices or extract
+  selected responses based on an extended formula language. This functionality
+  is provided by methods to the generics \code{\link[stats]{model.frame}},
+  and \code{\link[stats]{model.matrix}}. For details and examples, see
+  their manual page: \code{\link{model.frame.Formula}}.
+
+  In addition to these workhorses, a few further methods and functions
+  are provided.
+  By default, the \code{formula()} method switches back to the original
+  \code{formula}. Additionally, it allows selection of subsets of the
+  LHS and/or RHS (via \code{lhs}, and \code{rhs}) and collapsing
+  multiple parts on the LHS and/or RHS into a single part (via \code{collapse}).
   
-  \code{is.Formula} check whether the argument of the function is
-  \code{Formula} object.
+  \code{is.Formula} checks whether the argument inherits from the
+  \code{Formula} class.
   
-  \code{as.Formula} is a generic for coercing to \code{Formula},
-  the default method first coerces to \code{formula} and then calls
+  \code{as.Formula} is a generic for coercing to \code{Formula}, the
+  default method first coerces to \code{formula} and then calls
   \code{Formula}.
   
-  Several methods are provided: They all use the \code{formula} method
-  for creating a standard formula first. The returned formula is a
-  one-sided formula if \code{response = FALSE} and a two-sided formula
-  if \code{response = TRUE}. The right-hand side depends on the
-  \code{part} argument: the first part (\code{"first"}), the second part
-  \code{"second"} or both (\code{"both"}).
-  
-  Hence, the two arguments (\code{response} and \code{part}) are used in the
-  \code{terms}, \code{model.frame} and \code{model.matrix} methods.
+  Methods to further standard generics \code{\link[base]{print}},
+  \code{\link[stats]{update}}, and \code{\link[base]{length}} are provided
+  for \code{Formula} objects. The latter reports the number of parts on
+  the LHS and RHS, respectively.
 }
 
+\value{
+  \code{Formula} returns an object of class \code{Formula}
+  which inherits from \code{formula}. It is the original \code{formula}
+  plus two attributes \code{"lhs"} and \code{"rhs"} that contain the
+  parts of the decomposed left- and right-hand side, respectively.
+}
+
+\seealso{\code{\link{model.frame.Formula}}}
+
 \examples{
-data("airquality", package = "datasets")
-f <- Ozone ~ Solar.R + Wind | Temp
+## create a simple Formula with one response and two regressor parts
+f1 <- y ~ x1 + x2 | z1 + z2 + z3
+F1 <- Formula(f1)
+class(F1)
+length(F1)
 
-# create a Formula object from the formula
-f2 <- Formula(f)
-class(f2)
+## switch back to original formula
+formula(F1)
 
-# examples of updates of the two-parts formula
-update(f2,. ~ . - Wind + Day | . + Month)
-update(f2,. ~ . | . + Month)
-update(f2,. ~ . - Wind + Day | .)
+## create formula with various transformations
+formula(F1, rhs = 1)
+formula(F1, collapse = TRUE)
+formula(F1, lhs = 0, rhs = 2)
 
-# get the first, second and both parts, with or without the response
-formula(f2, part = "first", response = TRUE)
-formula(f2, part = "second", response = FALSE)
-formula(f2, part = "both")
+## put it together from its parts
+as.Formula(y ~ x1 + x2, ~ z1 + z2 + z3)
 
-# model.frame for the first part and for both parts
-head(model.frame(f2, part = "first", data = airquality))
-head(model.frame(f2, part = "both", data = airquality))
+## update the formula
+update(F1, . ~ . + I(x1^2) | . - z2 - z3)
+update(F1, . | y2 + y3 ~ .)
 
-# model.matrix for the first and the second part
-head(model.matrix(f2, data = airquality, part = "first"))
-head(model.matrix(f2, data = airquality, part = "second"))
+# create a multi-response multi-part formula
+f2 <- y1 | y2 + y3 ~ x1 + I(x2^2) | 0 + log(x1) | x3 / x4
+F2 <- Formula(f2)
+length(F2)
 
-# note that the sample is not the same due to missing values
-mf <- model.frame(f2, part = "both", data = airquality)
-head(model.matrix(f2, data = mf, part = "first"))
-head(model.matrix(f2, data = mf, part = "second"))
+## obtain various subsets using standard indexing
+## no lhs, first/seconde rhs
+formula(F2, lhs = 0, rhs = 1:2)
+formula(F2, lhs = 0, rhs = -3)
+formula(F2, lhs = 0, rhs = c(TRUE, TRUE, FALSE))
+## first lhs, third rhs
+formula(F2, lhs = c(TRUE, FALSE), rhs = 3)
 }
 
 \keyword{classes}
