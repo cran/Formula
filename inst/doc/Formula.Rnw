@@ -5,10 +5,13 @@
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
 \newcommand{\dquote}[1]{``{#1}''}
-\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\fct}[1]{{\texttt{#1()}}}
 \newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
 
-\author{Achim Zeileis\\WU Wirtschaftsuniversit\"at Wien
+\author{Achim Zeileis\\Universit\"at Innsbruck
    \And Yves Croissant\\Universit{\'e} de la R{\'e}union}
 \Plainauthor{Achim Zeileis, Yves Croissant}
 
@@ -20,15 +23,19 @@
 \Plainkeywords{formula processing, model frame, model matrix, R}
 
 \Abstract{ 
+  This introduction to the \proglang{R} package \pkg{Formula} is a (slightly)
+  modified version of \cite{Formula:Zeileis+Croissant:2010}, published in the
+  \emph{Journal of Statistical Software}.
+
   Model formulas are the standard approach for specifying the variables
   in statistical models in the \proglang{S} language. Although being eminently
   useful in an extremely wide class of applications, they have certain limitations
   including being confined to single responses and not providing convenient support for
   processing formulas with multiple parts. The latter is relevant for models
-  with two or more sets of variable, e.g., regressors/instruments in instrumental
-  variable regressions, two-part models such as hurdle models, or 
-  alternative-specific and individual-specific variables in choice models among many
-  others.
+  with two or more sets of variables, e.g., different equations for different model
+  parameters (such as mean and dispersion), regressors and instruments in instrumental
+  variable regressions, two-part models such as hurdle models, or alternative-specific
+  and individual-specific variables in choice models among many others.
   The \proglang{R}~package \pkg{Formula} addresses these two problems
   by providing a new class \class{Formula} (inheriting from \class{formula})
   that accepts an additional formula operator \code{|} separating multiple parts
@@ -38,12 +45,12 @@
 
 \Address{
   Achim Zeileis\\
-  Department of Statistics and Mathematics\\
-  WU Wirtschaftsuniversit\"at Wien\\
-  Augasse 2--6\\
-  1090 Wien, Austria\\
+  Department of Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr. 15\\
+  6020 Innsbruck, Austria\\
   E-mail: \email{Achim.Zeileis@R-project.org}\\
-  URL: \url{http://statmath.wu-wien.ac.at/~zeileis/}\\
+  URL: \url{http://statmath.wu.ac.at/~zeileis/}\\
 
   Yves Croissant\\
   Universit{\'e} de la R{\'e}union\\
@@ -51,7 +58,7 @@
   15, avenue Ren{\'e} Cassin\\
   BP7151\\
   97715 Saint-Denis Messag Cedex 9, France\\
-  E-mail: \email{yves.croissant@let.ish-lyon.cnrs.fr}\\
+  E-mail: \email{Yves.Croissant@univ-reunion.fr}\\
 }
 
 \begin{document}
@@ -75,44 +82,74 @@ language is to apply some model-fitting function (such as \fct{lm} or \fct{glm})
 to a \class{formula} description of the variables involved in the model and typically
 stored in a \class{data.frame}. The semantics of formula processing
 are based on the ideas of the \cite{Formula:Wilkinson+Rogers:1973} notation which in turn
-was targeted at specification of analysis of variance models. Despite this emphasis
-on specification of terms in models with linear predictors, formula notation
+was targeted at specification of analysis of variance models. Despite this emphasis on
+specification of terms in models with linear predictors, formula notation
 has always been used much more generally in \proglang{S}, e.g., for specifying variables in classification
 and regression trees, margins in contingency tables, or variables in graphical displays.
+In such applications, the precise meaning of a particular formula depends on the function
+that processes it. Typically, the standard formula processing approach would
+encompass extraction of the specified terms using \fct{terms}, preparation of a preprocessed
+data frame using \fct{model.frame}, and computation of a ``design'' or ``regressor''
+matrix using \fct{model.matrix}.
+However, there are certain limitations to these standard formula processing tools in \proglang{S} that
+can be rather inconvenient in certain applications:
+\begin{enumerate}
+  \item The formula notation can just be used on the right-hand side (RHS) of a formula
+        (to the right of the \code{~}) while it has its original arithmetic meaning on
+	the left-hand side (LHS). This makes it difficult to specify multiple responses,
+	especially if these are not numeric (e.g., factors). This feature would be
+	useful for specifying multivariate outcomes of mixed types in independence tests
+	\citep[e.g., in the \pkg{coin} package,][]{Formula:Hothorn+Hornik+VanDeWiel:2006,Formula:Hothorn+Hornik+VanDeWiel:2008}
+        or in models with multivariate responses
+	\citep[e.g., supported in the \pkg{party} package][]{Formula:Zeileis+Hothorn+Hornik:2008}.
+  \item There is no simple construct in standard formula notation that allows one to
+        separate several groups of variables from which separate model matrices can be
+        derived. This task occurs in many types of models, e.g., when processing
+        separate sets of variables for mean and dispersion
+        \citep[e.g., in the \pkg{betareg} package,][]{Formula:Cribari-Neto+Zeileis:2010},
+        separate equations for location, scatter, and shape
+        \citep[e.g., in the \pkg{gamlss} package,][]{Formula:Stasinopoulos+Rigby:2007},
+        regressors and instruments in instrumental variable regressions
+        (e.g., in the \pkg{plm} package, \citealp{Formula:Croissant+Millo:2008},
+	or the \pkg{AER} package, \citealp{Formula:Kleiber+Zeileis:2008}),
+        variables in two-part models such as hurdle models or zero-inflated regressions
+        \citep[e.g., in the \pkg{pscl} package,][]{Formula:Zeileis+Kleiber+Jackman:2008},
+        alternative-specific and individual-specific variables in choice models
+        \citep[e.g., in the \pkg{mlogit} package,][]{Formula:Croissant:2010},
+        efficiency level variables in stochastic frontier analysis
+        \citep[e.g., in the \pkg{frontier} package,][]{Formula:Coelli+Henningsen:2010}, or
+        modeling variables and partitioning variables in model-based recursive partitioning techniques
+        \citep[e.g., in the \pkg{party} package,][]{Formula:Zeileis+Hothorn+Hornik:2008}.
+\end{enumerate}
 
-However, there are certain limitations to the formula language in \proglang{S} that
-can be rather inconvenient in certain applications: (1)~The formula notation can
-just be used on the right-hand side (RHS) of a formula (to the right of the \code{~})
-while it has its original arithmetic meaning on the left-hand side (LHS). This makes it
-difficult to specify multiple responses, especially if these are not numeric (e.g., factors).
-This feature would be useful for specifying multivariate outcomes of mixed types
-in independence tests \citep[e.g., in the \pkg{coin} package,][]{Formula:Hothorn+Hornik+VanDeWiel:2006,Formula:Hothorn+Hornik+VanDeWiel:2008}.
-%% \cite{Formula:Therneau+Lumley:2009}
-(2)~There is no simple construct in standard formula notation that allows to
-separate several groups of variables from which separate model matrices can be
-derived. This task occurs in many types of models, e.g., when processing
-regressors and instruments in instrumental variable regressions
-\citep[e.g., in the \pkg{plm} package,][]{Formula:Croissant+Millo:2008},
-variables in two-part models such as hurdle models or zero-inflated regressions
-\citep[e.g., in the \pkg{pscl} package,][]{Formula:Zeileis+Kleiber+Jackman:2008},
-alternative-specific and individual-specific variables in choice models
-\citep[e.g., in the \pkg{mlogit} package,][]{Formula:Croissant:2008}, or
-modeling variables and partitioning variables in model-based recursive partitioning techniques
-\citep[e.g., in the \pkg{party} package,][]{Formula:Zeileis+Hothorn+Hornik:2008}.
-
-As we repeatedly needed these additional features in our own packages
+In many of the aformentioned packages, standard \class{formula} objects are employed
+but their processing is generalized, e.g., by using multiple formulas, multiple terms,
+by adding new formula operators or even more elaborate solutions. However, in many situations
+it is not easy to reuse these generalizations outside the package/function they were designed for.
+Therefore, as we repeatedly needed such generalizations in our own packages
 and addressed this in the past by various different solutions, it seemed natural
-to provide a more general unified approach that could be adapted to our own packages
-and also easily employed by other package developers. In the remainder of this paper we discuss
+to provide a more general unified approach by means of our new \pkg{Formula} package.
+This has already been reused in some of our own packages (including \pkg{AER}, \pkg{betareg},
+\pkg{mlogit}, and \pkg{plm}) but can also be easily employed by other package developers
+(e.g., as in the \pkg{frontier} package). More applications in our own and other packages
+will hopefully follow.
+
+In the remainder of this paper we discuss
 how multiple responses and multiple parts (both on the LHS and RHS) are enabled
 in the \pkg{Formula} package written in the \proglang{R} system for statistical
 computing \citep{Formula:R:2009} and available from the Comprehensive \proglang{R}
-Archive Network at \url{http://CRAN.R-project.org/package=Formula}. Built on top of
+Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=Formula}. Built on top of
 basic \class{formula} objects, the \class{Formula} class just adds a thin additional layer
 which is based on a single additional operator, namely \code{|}, that can be used to separate different
 parts (or groups) of variables. \pkg{Formula} essentially just handles the different
 formula parts and leverages the existing methods for \class{formula} objects for all
-remaining operations. In Section~\ref{sec:motivation} we show two small motivating
+remaining operations.\footnote{Throughout the paper, no terminological distinction is made between
+classic \class{formula} objects as such and the way they are interpreted by
+standard processing tools (e.g., \fct{terms}, \fct{model.frame}, \fct{model.matrix}).
+The reasons for this are twofold: First, it reflects their use as described in
+\cite{Formula:Chambers+Hastie:1992} and, second, generalizations generally require
+extra effort from the user.}
+In Section~\ref{sec:motivation} we show two small motivating
 examples that convey the main ideas implemented in the package and how easily they
 can be employed. The details of the \class{Formula} class and its associated methods
 are discussed in Section~\ref{sec:implementation} and Section~\ref{sec:usage} illustrates
@@ -209,7 +246,7 @@ at all in the \fct{model.response} sense:
 model.response(mf2)
 @
 %
-As \fct{model.response} can not be extended (without overloading the base \proglang{R}
+As \fct{model.response} cannot be extended (without overloading the base \proglang{R}
 function), \pkg{Formula} provides a new generic function \fct{model.part} which can
 be used to extract all variables from a model frame pertaining to specific parts.
 This can also be used to extract multiple responses. Its syntax is modeled
@@ -231,7 +268,7 @@ model.part(F1, data = mf1, lhs = 1, drop = TRUE)
 
 Below we discuss the ideas for the design of the \class{Formula} class
 and methods. As all tools are built on top of the
-\class{formula} class, its most important feature are briefly outlined
+\class{formula} class and its associated methods whose most important feature are briefly outlined
 as well.
 
 \subsection[Working with classic ``formula'' objects]{Working with classic \class{formula} objects}
@@ -293,7 +330,7 @@ e.g.,
 attr(F3, "lhs")
 @
 and analogously \code{attr(F3, "rhs")}. The user never has to compute
-on these attributes directly, however many methods for \class{Formula}
+on these attributes directly, but many methods for \class{Formula}
 objects take \code{lhs} and/or \code{rhs} arguments. These always refer
 to index vectors for the two respective lists.
 
@@ -381,7 +418,7 @@ in case the selected RHS part(s) contain(s) a ``\code{.}'' that needs to
 be resolved (see \code{?model.matrix.Formula} for an example).
 
 The LHS parts can be extracted using the method
-to the new \fct{model.part} generic, employing a syntax similar to \fct{model.matrix}:
+for the new \fct{model.part} generic, employing a syntax similar to \fct{model.matrix}:
 %
 <<model.response-substitute>>=
 model.part(F3, data = mf3, lhs = 1)
@@ -470,7 +507,7 @@ ivcoef(log(y1) ~ x1 | x2, data = dat)
 @
 %
 The same coefficients can be derived along with all the usual inference
-using the \fct{ivreg} function from the \pkg{AER} package \citep{AER:Kleiber+Zeileis:2008},
+using the \fct{ivreg} function from the \pkg{AER} package \citep{Formula:Kleiber+Zeileis:2008},
 which also uses the \pkg{Formula} tools in its latest release. Apart from
 providing inference and many other details, \fct{ivreg} also supports \code{weights},
 \code{offsets} etc. Finally, for backward compatibility, the function
@@ -487,7 +524,9 @@ replacing \code{f <- Formula(formula)} by
 %
 In summary, the usage of \pkg{Formula} should reduce the overhead for the
 developers of model-fitting functions in \proglang{R} with multiple responses and/or multiple
-parts and make the resulting programs more intelligible.
+parts and make the resulting programs more intelligible. Further \proglang{R}
+packages employing the \class{Formula} approach can be obtained from CRAN,
+including \pkg{betareg}, \pkg{frontier}, \pkg{mlogit}, and \pkg{plm}.
 
 
 \section{Summary} \label{sec:summary}
@@ -500,7 +539,6 @@ the usage of formula operators on the left-hand side of formulas. The methods pr
 for \class{Formula} objects are as similar as possible to the classic
 methods, facilitating their usage in model-fitting functions that require
 support for multiple responses and/or multiple parts of variables.
-
 
 \bibliography{Formula}
 

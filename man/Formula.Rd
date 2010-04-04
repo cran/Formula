@@ -10,6 +10,7 @@
 \alias{print.Formula}
 \alias{update.Formula}
 \alias{length.Formula}
+\alias{all.equal.Formula}
 
 \title{Extended Formulas: Multiple Responses and Multiple Regressor Parts}
 
@@ -94,6 +95,12 @@ is.Formula(object)
   which inherits from \code{formula}. It is the original \code{formula}
   plus two attributes \code{"lhs"} and \code{"rhs"} that contain the
   parts of the decomposed left- and right-hand side, respectively.
+}
+
+\references{
+Zeileis A, Croissant Y (2010). Extended Model Formulas in R: Multiple Parts and Multiple Responses.
+  \emph{Journal of Statistical Software}, \bold{34}(1), 1--13.
+  \url{http://www.jstatsoft.org/v34/i01/}.
 }
 
 \seealso{\code{\link{model.frame.Formula}}}

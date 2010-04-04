@@ -67,6 +67,12 @@ model.part(object, \dots)
   depending on whether multiple responses are employed or not.
 }
 
+\references{
+Zeileis A, Croissant Y (2010). Extended Model Formulas in R: Multiple Parts and Multiple Responses.
+  \emph{Journal of Statistical Software}, \bold{34}(1), 1--13.
+  \url{http://www.jstatsoft.org/v34/i01/}.
+}
+
 \seealso{\code{\link{Formula}},  \code{\link[stats]{model.frame}},
   \code{\link[stats]{model.matrix}}, \code{\link[stats]{terms}},
   \code{\link[stats:model.extract]{model.response}}}

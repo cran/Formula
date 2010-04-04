@@ -1,22 +1,19 @@
 citHeader("To cite Formula in publications use")
 
-## R >= 2.8.0 passes package metadata to citation().
-if(!exists("meta") || is.null(meta)) meta <- packageDescription("Formula")
-year <- sub("-.*", "", meta$Date)
-note <- sprintf("R package version %s", meta$Version)
+citEntry(entry = "Article",
+  title        = "Extended Model Formulas in {R}: Multiple Parts and Multiple Responses",
+  author       = personList(as.person("Achim Zeileis"),
+                   as.person("Yves Croissant")),
+  journal      = "Journal of Statistical Software",
+  year         = "2010",
+  volume       = "34",
+  number       = "1",
+  pages        = "1--13",
+  url          = "http://www.jstatsoft.org/v34/i01/",
 
-citEntry(entry = "Manual",
-         title = "{Formula}: Extended Formulas",
-         author = personList(as.person("Yves Croissant"), 
-			     as.person("Achim Zeileis")),
-         year = year,
-         note = note,
-         url = "http://CRAN.R-project.org/package=Formula",
-
-         textVersion =
-         paste("Yves Croissant, Achim Zeileis",
-   	       sprintf("(%s).", year),	 
-               "Formula: Extended Formulas.",
-	       paste(note, ".", sep = ""),
-               "URL http://CRAN.R-project.org/package=Formula")
+  textVersion  =
+  paste("Achim Zeileis, Yves Croissant (2010).",
+        "Extended Model Formulas in R: Multiple Parts and Multiple Responses.",
+        "Journal of Statistical Software 34(1), 1-13.",
+        "URL http://www.jstatsoft.org/v34/i01/.")
 )

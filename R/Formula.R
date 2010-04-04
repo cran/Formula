@@ -201,14 +201,14 @@ update.Formula <- function(object, new,...) {
     yf[[2]] <- y
     update(xf, yf)[[2]]
   }
-  
-  for(i in 1:length(lhs)) {
+    
+  if(length(lhs) > 0) for(i in 1:length(lhs)) {
     lhs[[i]] <- if(length(o_lhs) < i) n_lhs[[i]]
       else if(length(n_lhs) < i) o_lhs[[i]]
       else update_components(o_lhs[[i]], n_lhs[[i]])
   }
 
-  for(i in 1:length(rhs)) {
+  if(length(rhs) > 0) for(i in 1:length(rhs)) {
     rhs[[i]] <- if(length(o_rhs) < i) n_rhs[[i]]
       else if(length(n_rhs) < i) o_rhs[[i]]
       else update_components(o_rhs[[i]], n_rhs[[i]])
@@ -236,7 +236,25 @@ print.Formula <- function(x, ...) {
   invisible(x)
 }
 
+all.equal.Formula <- function(target, current, ...) {
+  rval <- NULL
+  
+  if(length(target)[1] != length(current)[1]) {
+    rval <- c(rval, paste("Length mismatch: target, current differ in number of LHS parts: ",
+      length(target)[1], ", ", length(current)[1], sep = ""))
+  } else if(!isTRUE(all.equal(attr(target, "lhs"), attr(current, "lhs")))) {
+    rval <- c(rval, "Formula mismatch: LHS formulas differ in contents")
+  }
 
+  if(length(target)[2] != length(current)[2]) {
+    rval <- c(rval, paste("Length mismatch: target, current differ in number of RHS parts: ",
+      length(target)[2], ", ", length(current)[2], sep = ""))
+  } else if(!isTRUE(all.equal(attr(target, "rhs"), attr(current, "rhs")))) {
+    rval <- c(rval, "Formula mismatch: RHS formulas differ in contents")
+  }
+  
+  if(is.null(rval)) TRUE else rval
+}
 
 ## convenience tools #################################################
 
