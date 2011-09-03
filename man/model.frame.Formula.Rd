@@ -24,7 +24,7 @@
 
 model.part(object, \dots)
 \method{model.part}{Formula}(object, data, lhs = 0, rhs = 0,
-  drop = FALSE, \dots)
+  drop = FALSE, terms = FALSE, \dots)
 }
 
 \arguments{
@@ -37,6 +37,8 @@ model.part(object, \dots)
     one \code{rhs} has to be specified.}
   \item{drop}{logical. Should the \code{data.frame} be dropped for single
     column data frames?}
+  \item{terms}{logical. Should the \code{"terms"} attribute (corresponding to
+    the \code{model.part} extracted) be added?}
   \item{\dots}{further arguments passed to the respective
     \code{formula} methods.}
 }
@@ -129,11 +131,11 @@ model.matrix(F2, data = mf2, rhs = 1)
 model.matrix(F2, data = mf2, rhs = 2)
 model.matrix(F2, data = mf2, rhs = 3)
 
-##########
-## misc ##
-##########
+#######################
+## Formulas with '.' ##
+#######################
 
-## Formulas with '.'
+## set up Formula
 F3 <- Formula(y1 | y2 ~ .)
 mf3 <- model.frame(F3, data = dat)
 ## without y1 or y2
@@ -142,6 +144,21 @@ model.matrix(F3, data = mf3)
 model.matrix(F3, data = mf3, lhs = 1)
 ## without y2 but with y1
 model.matrix(F3, data = mf3, lhs = 2)
+
+##############################
+## Process multiple offsets ##
+##############################
+
+## set up Formula
+F4 <- Formula(y1 ~ x3 + offset(x1) | x4 + offset(log(x2)))
+mf4 <- model.frame(F4, data = dat)
+## model.part can be applied as above and includes offset!
+model.part(F4, data = mf4, rhs = 1)
+## additionally, the corresponding corresponding terms can be included
+model.part(F4, data = mf4, rhs = 1, terms = TRUE)
+## hence model.offset() can be applied to extract offsets
+model.offset(model.part(F4, data = mf4, rhs = 1, terms = TRUE))
+model.offset(model.part(F4, data = mf4, rhs = 2, terms = TRUE))
 }
 
 \keyword{models}

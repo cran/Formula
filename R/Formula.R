@@ -152,7 +152,7 @@ model.part.formula <- function(formula, data, ..., drop = FALSE) {
   NextMethod()
 }
 
-model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ...) {
+model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, terms = FALSE, ...) {
 
   ## *hs = NULL: keep all parts
   if(is.null(lhs)) lhs <- 1:length(attr(object, "lhs"))
@@ -179,6 +179,7 @@ model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ...
   }
   rval <- data[, ix, drop = drop]
   if(!is.data.frame(rval)) names(rval) <- rownames(data)
+  if(terms) attr(rval, "terms") <- mt
   return(rval)
 }
 

@@ -1,3 +1,11 @@
+Changes in Version 1.0-1
+
+  o Added a terms = FALSE argument to model.part() method for "Formula"
+    objects. This can be leveraged when processing multiple offsets.
+    For example for y ~ x + offset(o1) | z + offset(o2). See ?model.part
+    for a worked example.
+
+
 Changes in Version 1.0-0
 
   o package now published in Journal of Statistical Software,
