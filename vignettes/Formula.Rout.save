@@ -1,0 +1,189 @@
+
+> options(width = 70, prompt = "R> ", continue = "+  ")
+
+> library("Formula")
+
+> set.seed(1090)
+
+> dat <- as.data.frame(matrix(round(runif(21), digits = 2), 
++     ncol = 7))
+
+> colnames(dat) <- c("y1", "y2", "y3", "x1", "x2", "x3", 
++     "x4")
+
+> for (i in c(2, 6:7)) dat[[i]] <- factor(dat[[i]] < 
++     0.5, labels = c("a", "b"))
+
+> dat$y2[1] <- NA
+
+> dat
+    y1   y2   y3   x1   x2 x3 x4
+1 0.82 <NA> 0.27 0.09 0.22  a  b
+2 0.70    a 0.17 0.26 0.46  b  b
+3 0.65    b 0.28 0.03 0.37  a  a
+
+> F1 <- Formula(log(y1) ~ x1 + x2 | I(x1^2))
+
+> length(F1)
+[1] 1 2
+
+> mf1 <- model.frame(F1, data = dat)
+
+> mf1
+     log(y1)   x1   x2 I(x1^2)
+1 -0.1984509 0.09 0.22  0.0081
+2 -0.3566749 0.26 0.46  0.0676
+3 -0.4307829 0.03 0.37   9e-04
+
+> model.response(mf1)
+         1          2          3 
+-0.1984509 -0.3566749 -0.4307829 
+
+> model.matrix(F1, data = mf1, rhs = 1)
+  (Intercept)   x1   x2
+1           1 0.09 0.22
+2           1 0.26 0.46
+3           1 0.03 0.37
+attr(,"assign")
+[1] 0 1 2
+
+> model.matrix(F1, data = mf1, rhs = 2)
+  (Intercept) I(x1^2)
+1           1  0.0081
+2           1  0.0676
+3           1  0.0009
+attr(,"assign")
+[1] 0 1
+
+> F2 <- Formula(y1 + y2 ~ x3)
+
+> length(F2)
+[1] 1 1
+
+> mf2 <- model.frame(F2, data = dat)
+
+> mf2
+    y1 y2 x3
+2 0.70  a  b
+3 0.65  b  a
+
+> model.response(mf2)
+NULL
+
+> model.part(F2, data = mf2, lhs = 1)
+    y1 y2
+2 0.70  a
+3 0.65  b
+
+> model.part(F1, data = mf1, lhs = 1, drop = TRUE)
+         1          2          3 
+-0.1984509 -0.3566749 -0.4307829 
+
+> F3 <- Formula(y1 + y2 | log(y3) ~ x1 + I(x2^2) | 0 + 
++     log(x1) | x3/x4)
+
+> F3
+y1 + y2 | log(y3) ~ x1 + I(x2^2) | 0 + log(x1) | x3/x4
+
+> length(F3)
+[1] 2 3
+
+> attr(F3, "lhs")
+[[1]]
+y1 + y2
+
+[[2]]
+log(y3)
+
+
+> formula(F3)
+y1 + y2 | log(y3) ~ x1 + I(x2^2) | 0 + log(x1) | x3/x4
+
+> formula(F3, lhs = 2, rhs = -2)
+log(y3) ~ x1 + I(x2^2) | x3/x4
+
+> formula(F3, lhs = c(TRUE, FALSE), rhs = 0)
+y1 + y2 ~ 0
+
+> terms(F3)
+~y1 + y2 + log(y3) + (x1 + I(x2^2)) + (0 + log(x1)) + x3/x4
+attr(,"variables")
+list(y1, y2, log(y3), x1, I(x2^2), log(x1), x3, x4)
+attr(,"factors")
+        y1 y2 log(y3) x1 I(x2^2) log(x1) x3 x3:x4
+y1       1  0       0  0       0       0  0     0
+y2       0  1       0  0       0       0  0     0
+log(y3)  0  0       1  0       0       0  0     0
+x1       0  0       0  1       0       0  0     0
+I(x2^2)  0  0       0  0       1       0  0     0
+log(x1)  0  0       0  0       0       1  0     0
+x3       0  0       0  0       0       0  1     2
+x4       0  0       0  0       0       0  0     1
+attr(,"term.labels")
+[1] "y1"      "y2"      "log(y3)" "x1"      "I(x2^2)" "log(x1)"
+[7] "x3"      "x3:x4"  
+attr(,"order")
+[1] 1 1 1 1 1 1 1 2
+attr(,"intercept")
+[1] 0
+attr(,"response")
+[1] 0
+attr(,".Environment")
+<environment: R_GlobalEnv>
+
+> formula(terms(F3))
+~y1 + y2 + log(y3) + (x1 + I(x2^2)) + (0 + log(x1)) + x3/x4
+
+> formula(terms(F3, lhs = 2, rhs = -2))
+log(y3) ~ x1 + I(x2^2) + x3/x4
+
+> formula(terms(F3, lhs = c(TRUE, FALSE), rhs = 0))
+~y1 + y2
+
+> mf3 <- model.frame(F3, data = dat, subset = y1 < 0.75, 
++     weights = x1)
+
+> mf3
+    y1 y2   log(y3)   x1 I(x2^2)   log(x1) x3 x4 (weights)
+2 0.70  a -1.771957 0.26  0.2116 -1.347074  b  b      0.26
+3 0.65  b -1.272966 0.03  0.1369 -3.506558  a  a      0.03
+
+> model.matrix(F3, data = mf3, rhs = 2)
+    log(x1)
+2 -1.347074
+3 -3.506558
+attr(,"assign")
+[1] 1
+
+> model.part(F3, data = mf3, lhs = 1)
+    y1 y2
+2 0.70  a
+3 0.65  b
+
+> model.part(F3, data = mf3, lhs = 2)
+    log(y3)
+2 -1.771957
+3 -1.272966
+
+> model.weights(mf3)
+[1] 0.26 0.03
+
+> update(F1, . ~ . - x1 | . + x1)
+log(y1) ~ x2 | I(x1^2) + x1
+
+> update(F1, . + y2 | y3 ~ .)
+log(y1) + y2 | y3 ~ x1 + x2 | I(x1^2)
+
+> as.Formula(y1 ~ x1, y2 ~ x2, ~x3)
+y1 | y2 ~ x1 | x2 | x3
+
+> ivcoef <- function(formula, data, subset, na.action, 
++     ...) {
++     mf <- match.call(expand.dots = FALSE)
++     m <- match(c("formula", "data", .... [TRUNCATED] 
+
+> ivcoef(log(y1) ~ x1 | x2, data = dat)
+(Intercept)          x1 
+  -0.169027   -1.260073 
+
+ *** Run successfully completed ***

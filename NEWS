@@ -1,3 +1,12 @@
+Changes in Version 1.1-0
+
+  o All methods returning "formula" or "Formula" objects now preserve the
+    environment of the originally supplied object by default.
+
+  o The default and formula methods of as.Formula() methods now also take
+    an env argument.
+
+
 Changes in Version 1.0-1
 
   o Added a terms = FALSE argument to model.part() method for "Formula"

@@ -10,20 +10,18 @@ Formula <- function(object) {
 
 as.Formula <- function(x, ...) UseMethod("as.Formula")
 
-as.Formula.default <- function(x, ...) {
-  if(!inherits(x, "formula")) x <- as.formula(x)
-  Formula(x)
-}
+as.Formula.default <- function(x, ..., env = parent.frame()) Formula(as.formula(x, env = env))
 
-as.Formula.Formula <- function(x, ...) {
-  x
-}
+as.Formula.Formula <- function(x, ...) x
 
-as.Formula.formula <- function(x, ...) {
+as.Formula.formula <- function(x, ..., env) {
+
+  ## preserve original environment
+  if(missing(env)) env <- environment(x)
 
   ## combine all arguments to formula list
   x <- c(list(x), list(...))
-  x <- lapply(x, as.formula)  
+  x <- lapply(x, as.formula)
   
   ## split all 
   x_split <- lapply(x, split_formula)
@@ -36,11 +34,14 @@ as.Formula.formula <- function(x, ...) {
   ## create formula
   ## (we have everything to do this by hand, but for encapsulating code
   ## call Formula() again...which splits again)
-  Formula(x_all)
+  rval <- Formula(x_all)
+
+  ## re-attach original environment
+  environment(rval) <- env
+  return(rval)
 }
 
-is.Formula <- function(object)
-  inherits(object, "Formula")
+is.Formula <- function(object) inherits(object, "Formula")
 
 formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
   update = FALSE, drop = TRUE, ...)
@@ -75,6 +76,9 @@ formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
 
   ## reconvert to Formula if desired
   if(!drop) rval <- Formula(rval)
+
+  ## re-attach original environment
+  environment(rval) <- environment(x)
 
   return(rval)
 }
@@ -121,6 +125,8 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL) {
       }
     }
   
+    ## re-attach original environment and return
+    environment(form) <- environment(Formula)
     return(form)
   }
 
@@ -129,14 +135,12 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL) {
   terms(form, ...)
 }
 
-model.frame.Formula <- function(formula, data = NULL, ...,
-  lhs = NULL, rhs = NULL)
+model.frame.Formula <- function(formula, data = NULL, ..., lhs = NULL, rhs = NULL)
 {
   model.frame(terms(formula, lhs = lhs, rhs = rhs, data = data), data = data, ...)
 }
 
-model.matrix.Formula <- function(object, data = environment(object), ...,
-  lhs = NULL, rhs = 1)
+model.matrix.Formula <- function(object, data = environment(object), ..., lhs = NULL, rhs = 1)
 {
   form <- formula(object, lhs = lhs, rhs = rhs, collapse = c(FALSE, TRUE))
   mt <- delete.response(terms(form, data = data))
@@ -221,7 +225,12 @@ update.Formula <- function(object, new,...) {
   ## create formula
   ## (we have everything to do this by hand, but for encapsulating code
   ## call Formula() again...which splits again)
-  Formula(rval)  
+  rval <- Formula(rval)  
+  
+  ## preserve original environment
+  environment(rval) <- environment(object)
+  
+  return(rval)
 }
 
 length.Formula <- function(x) {

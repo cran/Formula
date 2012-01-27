@@ -70,19 +70,21 @@ is.Formula(object)
   and \code{\link[stats]{model.matrix}}. For details and examples, see
   their manual page: \code{\link{model.frame.Formula}}.
 
-  In addition to these workhorses, a few further methods and functions
-  are provided.
+  In addition to these workhorses, a few further methods and functions are provided.
   By default, the \code{formula()} method switches back to the original
   \code{formula}. Additionally, it allows selection of subsets of the
   LHS and/or RHS (via \code{lhs}, and \code{rhs}) and collapsing
-  multiple parts on the LHS and/or RHS into a single part (via \code{collapse}).
+  multiple parts on the LHS and/or RHS into a single part (via \code{collapse}).  
   
   \code{is.Formula} checks whether the argument inherits from the
   \code{Formula} class.
   
   \code{as.Formula} is a generic for coercing to \code{Formula}, the
   default method first coerces to \code{formula} and then calls
-  \code{Formula}.
+  \code{Formula}. The default and \code{formula} method also take an
+  optional \code{env} argument, specifying the environment of the resulting
+  \code{Formula}. In the latter case, this defaults to the environment
+  of the \code{formula} supplied.
   
   Methods to further standard generics \code{\link[base]{print}},
   \code{\link[stats]{update}}, and \code{\link[base]{length}} are provided
