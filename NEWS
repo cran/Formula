@@ -1,5 +1,10 @@
 Changes in Version 1.1-0
 
+  o The CITATION was incorrect and is fixed now.
+
+
+Changes in Version 1.1-0
+
   o All methods returning "formula" or "Formula" objects now preserve the
     environment of the originally supplied object by default.
 
