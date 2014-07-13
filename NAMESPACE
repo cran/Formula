@@ -1,3 +1,5 @@
+import("stats")
+
 export(
   "Formula",
   "as.Formula",
@@ -15,6 +17,7 @@ S3method("update", "Formula")
 S3method("length", "Formula")
 S3method("print", "Formula")
 S3method("all.equal", "Formula")
+S3method("str", "Formula")
 
 ## methods to as.Formula()
 S3method("as.Formula", "default")

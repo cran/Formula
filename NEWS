@@ -1,4 +1,9 @@
-Changes in Version 1.1-0
+Changes in Version 1.1-2
+
+  o Added a str() method.
+  
+
+Changes in Version 1.1-1
 
   o The CITATION was incorrect and is fixed now.
 

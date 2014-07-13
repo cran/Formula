@@ -11,6 +11,7 @@
 \alias{update.Formula}
 \alias{length.Formula}
 \alias{all.equal.Formula}
+\alias{str.Formula}
 
 \title{Extended Formulas: Multiple Responses and Multiple Regressor Parts}
 

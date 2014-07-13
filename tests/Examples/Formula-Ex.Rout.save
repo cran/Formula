@@ -32,7 +32,7 @@ Type 'q()' to quit R.
 > ###   Parts
 > ### Aliases: Formula formula.Formula as.Formula as.Formula.default
 > ###   as.Formula.formula as.Formula.Formula is.Formula print.Formula
-> ###   update.Formula length.Formula all.equal.Formula
+> ###   update.Formula length.Formula all.equal.Formula str.Formula
 > ### Keywords: classes
 > 
 > ### ** Examples
