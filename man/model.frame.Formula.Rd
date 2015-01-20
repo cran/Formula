@@ -16,15 +16,15 @@
 
 \usage{
 \method{model.frame}{Formula}(formula, data = NULL, \dots,
-  lhs = NULL, rhs = NULL)
+  lhs = NULL, rhs = NULL, dot = "separate")
 \method{model.matrix}{Formula}(object, data = environment(object), \dots,
-  lhs = NULL, rhs = 1)
+  lhs = NULL, rhs = 1, dot = "separate")
 \method{terms}{Formula}(x, \dots,
-  lhs = NULL, rhs = NULL)
+  lhs = NULL, rhs = NULL, dot = "separate")
 
 model.part(object, \dots)
 \method{model.part}{Formula}(object, data, lhs = 0, rhs = 0,
-  drop = FALSE, terms = FALSE, \dots)
+  drop = FALSE, terms = FALSE, dot = "separate", \dots)
 }
 
 \arguments{
@@ -35,6 +35,10 @@ model.part(object, \dots)
     right-hand side, respectively, should be employed. \code{NULL}
     corresponds to all parts, \code{0} to none. At least one \code{lhs} or
     one \code{rhs} has to be specified.}
+  \item{dot}{character specifying how to process formula parts with a dot
+    (\code{.}) on the right-hand side. This can either be \code{"separate"}
+    so that each formula part is expanded separately or \code{"sequential"}
+    so that the parts are expanded sequentially conditional on all prior parts.}
   \item{drop}{logical. Should the \code{data.frame} be dropped for single
     column data frames?}
   \item{terms}{logical. Should the \code{"terms"} attribute (corresponding to
@@ -135,7 +139,7 @@ model.matrix(F2, data = mf2, rhs = 3)
 ## Formulas with '.' ##
 #######################
 
-## set up Formula
+## set up Formula with a single '.'
 F3 <- Formula(y1 | y2 ~ .)
 mf3 <- model.frame(F3, data = dat)
 ## without y1 or y2
@@ -144,6 +148,16 @@ model.matrix(F3, data = mf3)
 model.matrix(F3, data = mf3, lhs = 1)
 ## without y2 but with y1
 model.matrix(F3, data = mf3, lhs = 2)
+
+## set up Formula with multiple '.'
+F3 <- Formula(y1 | y2 | y3 ~ . - x3 - x4 | .)
+mf3 <- model.frame(F3, data = dat)
+## only x1-x2
+model.part(F3, data = mf3, rhs = 1)
+## all x1-x4 because '.' is processed separately (default)
+model.part(F3, data = mf3, rhs = 2, dot = "separate")
+## only x3-x4 because '.' is processed sequentally after first RHS
+model.part(F3, data = mf3, rhs = 2, dot = "sequential")
 
 ##############################
 ## Process multiple offsets ##

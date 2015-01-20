@@ -1,3 +1,9 @@
+Changes in Version 1.2-0
+
+  o Extended processing of formulas with one or more '.' on the
+    right-hand side.
+  
+
 Changes in Version 1.1-2
 
   o Added a str() method.

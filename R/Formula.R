@@ -47,20 +47,20 @@ formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
   update = FALSE, drop = TRUE, ...)
 {
   ## available parts
-  lpart <- 1:length(attr(x, "lhs"))
-  rpart <- 1:length(attr(x, "rhs"))
+  lpart <- 1L:length(attr(x, "lhs"))
+  rpart <- 1L:length(attr(x, "rhs"))
 
   ## default: keep all parts
   lhs <- if(is.null(lhs)) lpart else lpart[lhs]
   rhs <- if(is.null(rhs)) rpart else rpart[rhs]
   if(any(is.na(lhs))) {
     lhs <- as.vector(na.omit(lhs))
-    if(length(lhs) < 1) lhs <- 0
+    if(length(lhs) < 1L) lhs <- 0L
     warning("subscript out of bounds, not all 'lhs' available")
   }
   if(any(is.na(rhs))) {
     rhs <- as.vector(na.omit(rhs))
-    if(length(rhs) < 1) rhs <- 0
+    if(length(rhs) < 1L) rhs <- 0L
     warning("subscript out of bounds, not all 'rhs' available")
   }  
 
@@ -68,8 +68,8 @@ formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
   collapse <- rep(as.logical(collapse), length.out = 2)
 
   rval <- paste_formula(attr(x, "lhs")[lhs], attr(x, "rhs")[rhs],
-    lsep = ifelse(collapse[1], "+", "|"),
-    rsep = ifelse(collapse[2], "+", "|"))
+    lsep = ifelse(collapse[1L], "+", "|"),
+    rsep = ifelse(collapse[2L], "+", "|"))
 
   ## omit potentially redundant terms
   if(all(collapse) & update) rval <- update(rval, if(length(rval) > 2) . ~ . else ~ .)
@@ -83,7 +83,7 @@ formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
   return(rval)
 }
 
-terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL) {
+terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL, dot = "separate") {
 
   ## simplify a Formula to a formula that can be processed with
   ## terms/model.frame etc.
@@ -96,26 +96,26 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL) {
     ## convenience functions for checking extended features
     is_lhs_extended <- function(Formula) {
       ## check for multiple parts
-      if(length(attr(Formula, "lhs")) > 1) {
+      if(length(attr(Formula, "lhs")) > 1L) {
         return(TRUE)
       } else {
       ## and multiple responses
-        if(length(attr(Formula, "lhs")) < 1) return(FALSE)
+        if(length(attr(Formula, "lhs")) < 1L) return(FALSE)
         return(length(attr(terms(paste_formula(NULL,
-	  attr(Formula, "lhs"), rsep = "+")), "term.labels")) > 1)
+	  attr(Formula, "lhs"), rsep = "+")), "term.labels")) > 1L)
       }
     }
 
     is_rhs_extended <- function(Formula) {
       ## check for muliple parts
-      length(attr(Formula, "rhs")) > 1
+      length(attr(Formula, "rhs")) > 1L
     }
 
     ## simplify (if necessary)
     ext_lhs <- is_lhs_extended(Form)
     if(ext_lhs | is_rhs_extended(Form)) {
       form <- if(ext_lhs) {
-        if(length(attr(Form, "rhs")) == 1 & identical(attr(Form, "rhs")[[1]], 0)) {
+        if(length(attr(Form, "rhs")) == 1L & identical(attr(Form, "rhs")[[1L]], 0)) {
           paste_formula(NULL, attr(Form, "lhs"), rsep = "+")    
         } else {
 	  paste_formula(NULL, c(attr(Form, "lhs"), attr(Form, "rhs")), rsep = "+")
@@ -130,20 +130,38 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL) {
     return(form)
   }
 
-  ## simplify and then call traditional terms()
+  ## check whether formula has a dot
+  has_dot <- function(formula) inherits(try(terms(formula), silent = TRUE), "try-error")
+
+  ## simplify to standard formula
   form <- simplify_to_formula(x, lhs = lhs, rhs = rhs)
+
+  ## if necessary try to expand/update/simplify formula parts with dot
+  if(has_dot(form)) {
+    dot <- match.arg(dot, c("separate", "sequential"))
+    ll <- formula(x, rhs = 0L, collapse = TRUE)[[2L]]
+    rr <- attr(x, "rhs")
+    for(i in seq_along(rr)) {
+      if(dot == "sequential" && i > 1L) ll <- c_formula(ll, rr[[i - 1L]], sep = "+")
+      fi <- paste_formula(NULL, c_formula(rr[[i]], ll, sep = "-"))
+      attr(x, "rhs")[[i]] <- update(formula(terms(fi, ...)), . ~ .)[[3L]]
+    }
+    form <- simplify_to_formula(x, lhs = lhs, rhs = rhs)
+  }
+  
+  ## call traditional terms()
   terms(form, ...)
 }
 
-model.frame.Formula <- function(formula, data = NULL, ..., lhs = NULL, rhs = NULL)
+model.frame.Formula <- function(formula, data = NULL, ..., lhs = NULL, rhs = NULL, dot = "separate")
 {
-  model.frame(terms(formula, lhs = lhs, rhs = rhs, data = data), data = data, ...)
+  model.frame(terms(formula, lhs = lhs, rhs = rhs, data = data, dot = dot), data = data, ...)
 }
 
-model.matrix.Formula <- function(object, data = environment(object), ..., lhs = NULL, rhs = 1)
+model.matrix.Formula <- function(object, data = environment(object), ..., lhs = NULL, rhs = 1, dot = "separate")
 {
   form <- formula(object, lhs = lhs, rhs = rhs, collapse = c(FALSE, TRUE))
-  mt <- delete.response(terms(form, data = data))
+  mt <- delete.response(terms(form, data = data, dot = dot))
   model.matrix(mt, data = data, ...)
 }
 
@@ -156,21 +174,21 @@ model.part.formula <- function(formula, data, ..., drop = FALSE) {
   NextMethod()
 }
 
-model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, terms = FALSE, ...) {
+model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, terms = FALSE, dot = "separate", ...) {
 
   ## *hs = NULL: keep all parts
-  if(is.null(lhs)) lhs <- 1:length(attr(object, "lhs"))
-  if(is.null(rhs)) rhs <- 1:length(attr(object, "rhs"))
+  if(is.null(lhs)) lhs <- 1L:length(attr(object, "lhs"))
+  if(is.null(rhs)) rhs <- 1L:length(attr(object, "rhs"))
 
   if(isTRUE(all.equal(as.numeric(lhs), rep(0, length(lhs)))) &
      isTRUE(all.equal(as.numeric(rhs), rep(0, length(rhs)))))
     stop("Either some 'lhs' or 'rhs' has to be selected.")
 
   ## construct auxiliary terms object
-  mt <- terms(object, lhs = lhs, rhs = rhs, data = data)
+  mt <- terms(object, lhs = lhs, rhs = rhs, dot = dot, data = data)
 
   ## subset model frame
-  ix <- attr(mt, "variables")[-1]
+  ix <- attr(mt, "variables")[-1L]
   if(is.null(ix)) {
     ix <- 0
   } else {
@@ -202,18 +220,18 @@ update.Formula <- function(object, new,...) {
   ## convenience function for updating components
   update_components <- function(x, y) {
     xf <- yf <- ~ .
-    xf[[2]] <- x
-    yf[[2]] <- y
-    update(xf, yf)[[2]]
+    xf[[2L]] <- x
+    yf[[2L]] <- y
+    update(xf, yf)[[2L]]
   }
     
-  if(length(lhs) > 0) for(i in 1:length(lhs)) {
+  if(length(lhs) > 0L) for(i in 1L:length(lhs)) {
     lhs[[i]] <- if(length(o_lhs) < i) n_lhs[[i]]
       else if(length(n_lhs) < i) o_lhs[[i]]
       else update_components(o_lhs[[i]], n_lhs[[i]])
   }
 
-  if(length(rhs) > 0) for(i in 1:length(rhs)) {
+  if(length(rhs) > 0L) for(i in 1L:length(rhs)) {
     rhs[[i]] <- if(length(o_rhs) < i) n_rhs[[i]]
       else if(length(n_rhs) < i) o_rhs[[i]]
       else update_components(o_rhs[[i]], n_rhs[[i]])
@@ -249,16 +267,16 @@ print.Formula <- function(x, ...) {
 all.equal.Formula <- function(target, current, ...) {
   rval <- NULL
   
-  if(length(target)[1] != length(current)[1]) {
+  if(length(target)[1L] != length(current)[1L]) {
     rval <- c(rval, paste("Length mismatch: target, current differ in number of LHS parts: ",
-      length(target)[1], ", ", length(current)[1], sep = ""))
+      length(target)[1L], ", ", length(current)[1L], sep = ""))
   } else if(!isTRUE(all.equal(attr(target, "lhs"), attr(current, "lhs")))) {
     rval <- c(rval, "Formula mismatch: LHS formulas differ in contents")
   }
 
-  if(length(target)[2] != length(current)[2]) {
+  if(length(target)[2L] != length(current)[2L]) {
     rval <- c(rval, paste("Length mismatch: target, current differ in number of RHS parts: ",
-      length(target)[2], ", ", length(current)[2], sep = ""))
+      length(target)[2L], ", ", length(current)[2L], sep = ""))
   } else if(!isTRUE(all.equal(attr(target, "rhs"), attr(current, "rhs")))) {
     rval <- c(rval, "Formula mismatch: RHS formulas differ in contents")
   }
@@ -283,17 +301,17 @@ split_formula <- function(f) {
 
   stopifnot(inherits(f, "formula"))
 
-  rhs <- if(length(f) > 2) f[[3]] else f[[2]]
-  lhs <- if(length(f) > 2) f[[2]] else NULL
+  rhs <- if(length(f) > 2) f[[3L]] else f[[2L]]
+  lhs <- if(length(f) > 2) f[[2L]] else NULL
 
   extract_parts <- function(x, sep = "|") {
     if(is.null(x)) return(NULL)
     
     rval <- list()
-    if(length(x) > 1 && x[[1]] == sep) {
-      while(length(x) > 1 && x[[1]] == sep) {
-        rval <- c(x[[3]], rval)
-        x <- x[[2]]
+    if(length(x) > 1L && x[[1L]] == sep) {
+      while(length(x) > 1L && x[[1L]] == sep) {
+        rval <- c(x[[3L]], rval)
+        x <- x[[2L]]
       }
     }
     return(c(x, rval))
@@ -302,34 +320,34 @@ split_formula <- function(f) {
   list(lhs = extract_parts(lhs), rhs = extract_parts(rhs))
 }
 
+## combine (parts of) formulas
+c_formula <- function(f1, f2, sep = "~") {
+
+  stopifnot(length(sep) == 1L, nchar(sep) == 1L,
+    sep %in% c("~", "+", "-", "|", "&"))
+
+  if(sep == "~") {
+    rval <- . ~ .
+    rval[[3L]] <- f2	
+    rval[[2L]] <- f1
+  } else {
+    rval <- as.formula(paste(". ~ .", sep, "."))
+    rval[[3L]][[3L]] <- f2
+    rval[[3L]][[2L]] <- f1
+    rval <- rval[[3L]]
+  }
+
+  return(rval)
+}
+
 ## reassemble formulas
 paste_formula <- function(lhs, rhs, lsep = "|", rsep = "|") {
 
-  ## combine (parts of) formulas
-  c_formula <- function(f1, f2, sep = "~") {
-
-    stopifnot(length(sep) == 1, nchar(sep) == 1,
-      sep %in% c("~", "+", "|", "&"))
-
-    if(sep == "~") {
-      rval <- . ~ .
-      rval[[3]] <- f2    
-      rval[[2]] <- f1
-    } else {
-      rval <- as.formula(paste(". ~ .", sep, "."))
-      rval[[3]][[3]] <- f2
-      rval[[3]][[2]] <- f1
-      rval <- rval[[3]]
-    }
+  stopifnot(all(nchar(lsep) == 1L), all(lsep %in% c("+", "|", "&")))
+  stopifnot(all(nchar(rsep) == 1L), all(rsep %in% c("+", "|", "&")))
   
-    return(rval)
-  }
-
-  stopifnot(all(nchar(lsep) == 1), all(lsep %in% c("+", "|", "&")))
-  stopifnot(all(nchar(rsep) == 1), all(rsep %in% c("+", "|", "&")))
-  
-  if(length(lhs) > 1) lsep <- rep(lsep, length.out = length(lhs) - 1)
-  if(length(rhs) > 1) rsep <- rep(rsep, length.out = length(rhs) - 1)
+  if(length(lhs) > 1L) lsep <- rep(lsep, length.out = length(lhs) - 1L)
+  if(length(rhs) > 1L) rsep <- rep(rsep, length.out = length(rhs) - 1L)
 
   if(is.null(lhs)) lhs <- list()
   if(is.null(rhs)) rhs <- list()
@@ -337,13 +355,13 @@ paste_formula <- function(lhs, rhs, lsep = "|", rsep = "|") {
   if(!is.list(lhs)) lhs <- list(lhs)
   if(!is.list(rhs)) rhs <- list(rhs)
 
-  lval <- if(length(lhs) > 0) lhs[[1]] else NULL
-  if(length(lhs) > 1) {
-    for(i in 2:length(lhs)) lval <- c_formula(lval, lhs[[i]], sep = lsep[[i-1]])
+  lval <- if(length(lhs) > 0L) lhs[[1L]] else NULL
+  if(length(lhs) > 1L) {
+    for(i in 2L:length(lhs)) lval <- c_formula(lval, lhs[[i]], sep = lsep[[i - 1L]])
   }
-  rval <- if(length(rhs) > 0) rhs[[1]] else 0 ## FIXME: Is there something better?
-  if(length(rhs) > 1) {
-    for(i in 2:length(rhs)) rval <- c_formula(rval, rhs[[i]], sep = rsep[[i-1]])
+  rval <- if(length(rhs) > 0L) rhs[[1L]] else 0 ## FIXME: Is there something better?
+  if(length(rhs) > 1L) {
+    for(i in 2L:length(rhs)) rval <- c_formula(rval, rhs[[i]], sep = rsep[[i - 1L]])
   }
 
   c_formula(lval, rval, sep = "~")
