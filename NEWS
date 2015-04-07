@@ -1,3 +1,13 @@
+Changes in Version 1.2-1
+
+  o Bug fix for formulas with transformed variables on the left-hand
+    side (e.g., cbind(), log(), or Surv()) and one ore more '.' on the
+    right-hand side. The terms() and hence the model.frame() now work
+    smoothly. When using model.part() the same Formula (plus 'dot'
+    argument) has to be supplied when preparing the model.frame() and
+    the model.part().
+  
+
 Changes in Version 1.2-0
 
   o Extended processing of formulas with one or more '.' on the

@@ -24,7 +24,7 @@
 
 model.part(object, \dots)
 \method{model.part}{Formula}(object, data, lhs = 0, rhs = 0,
-  drop = FALSE, terms = FALSE, dot = "separate", \dots)
+  drop = FALSE, terms = FALSE, dot = NULL, \dots)
 }
 
 \arguments{
@@ -71,6 +71,17 @@ model.part(object, \dots)
   (and optionally the \code{lhs}). Also, it returns either a \code{data.frame} with
   multiple columns or a single column (dropping the \code{data.frame} property)
   depending on whether multiple responses are employed or not.
+  
+  If the the formula contains one or more dots (\code{.}), some care has to be
+  taken to process these correctly, especially if the LHS contains transformartions
+  (such as \code{log}, \code{sqrt}, \code{cbind}, \code{Surv}, etc.). Calling the
+  \code{terms} method with the original data (untransformed, if any) resolves
+  all dots (by default separately for each part, otherwise sequentially) and also
+  includes the original and updated formula as part of the terms. When calling
+  \code{model.part} either the original untransformed data should be provided
+  along with a \code{dot} specification or the transformed \code{model.frame}
+  from the same formula without another \code{dot} specification (in which
+  case the \code{dot} is inferred from the \code{terms} of the \code{model.frame}).
 }
 
 \references{
@@ -150,14 +161,19 @@ model.matrix(F3, data = mf3, lhs = 1)
 model.matrix(F3, data = mf3, lhs = 2)
 
 ## set up Formula with multiple '.'
-F3 <- Formula(y1 | y2 | y3 ~ . - x3 - x4 | .)
-mf3 <- model.frame(F3, data = dat)
+F3 <- Formula(y1 | y2 | log(y3) ~ . - x3 - x4 | .)
+## process both '.' separately (default)
+mf3 <- model.frame(F3, data = dat, dot = "separate")
 ## only x1-x2
 model.part(F3, data = mf3, rhs = 1)
-## all x1-x4 because '.' is processed separately (default)
-model.part(F3, data = mf3, rhs = 2, dot = "separate")
-## only x3-x4 because '.' is processed sequentally after first RHS
-model.part(F3, data = mf3, rhs = 2, dot = "sequential")
+## all x1-x4
+model.part(F3, data = mf3, rhs = 2)
+## process the '.' sequentially, i.e., the second RHS conditional on the first
+mf3 <- model.frame(F3, data = dat, dot = "sequential")
+## only x1-x2
+model.part(F3, data = mf3, rhs = 1)
+## only x3-x4
+model.part(F3, data = mf3, rhs = 2)
 
 ##############################
 ## Process multiple offsets ##

@@ -83,74 +83,42 @@ formula.Formula <- function(x, lhs = NULL, rhs = NULL, collapse = FALSE,
   return(rval)
 }
 
-terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL, dot = "separate") {
-
-  ## simplify a Formula to a formula that can be processed with
-  ## terms/model.frame etc.
-  simplify_to_formula <- function(Formula, lhs = NULL, rhs = NULL) {
-
-    ## get desired subset as formula and Formula
-    form <- formula(Formula, lhs = lhs, rhs = rhs)
-    Form <- Formula(form)
-
-    ## convenience functions for checking extended features
-    is_lhs_extended <- function(Formula) {
-      ## check for multiple parts
-      if(length(attr(Formula, "lhs")) > 1L) {
-        return(TRUE)
-      } else {
-      ## and multiple responses
-        if(length(attr(Formula, "lhs")) < 1L) return(FALSE)
-        return(length(attr(terms(paste_formula(NULL,
-	  attr(Formula, "lhs"), rsep = "+")), "term.labels")) > 1L)
-      }
-    }
-
-    is_rhs_extended <- function(Formula) {
-      ## check for muliple parts
-      length(attr(Formula, "rhs")) > 1L
-    }
-
-    ## simplify (if necessary)
-    ext_lhs <- is_lhs_extended(Form)
-    if(ext_lhs | is_rhs_extended(Form)) {
-      form <- if(ext_lhs) {
-        if(length(attr(Form, "rhs")) == 1L & identical(attr(Form, "rhs")[[1L]], 0)) {
-          paste_formula(NULL, attr(Form, "lhs"), rsep = "+")    
-        } else {
-	  paste_formula(NULL, c(attr(Form, "lhs"), attr(Form, "rhs")), rsep = "+")
-	}
-      } else {
-        paste_formula(attr(Form, "lhs"), attr(Form, "rhs"), rsep = "+")    
-      }
-    }
-  
-    ## re-attach original environment and return
-    environment(form) <- environment(Formula)
-    return(form)
-  }
-
-  ## check whether formula has a dot
-  has_dot <- function(formula) inherits(try(terms(formula), silent = TRUE), "try-error")
-
+terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL, dot = "separate")
+{
   ## simplify to standard formula
   form <- simplify_to_formula(x, lhs = lhs, rhs = rhs)
 
   ## if necessary try to expand/update/simplify formula parts with dot
   if(has_dot(form)) {
+    x_orig <- x
     dot <- match.arg(dot, c("separate", "sequential"))
+
+    ## lhs and rhs calls
     ll <- formula(x, rhs = 0L, collapse = TRUE)[[2L]]
     rr <- attr(x, "rhs")
+
+    ## update and simplify again
     for(i in seq_along(rr)) {
       if(dot == "sequential" && i > 1L) ll <- c_formula(ll, rr[[i - 1L]], sep = "+")
-      fi <- paste_formula(NULL, c_formula(rr[[i]], ll, sep = "-"))
-      attr(x, "rhs")[[i]] <- update(formula(terms(fi, ...)), . ~ .)[[3L]]
+      fi <- paste_formula(ll, rr[[i]]) #probably better than:# paste_formula(NULL, c_formula(rr[[i]], ll, sep = "-"))
+      rr[[i]] <- update(formula(terms(fi, ...)), . ~ .)[[3L]]
     }
+    attr(x, "rhs") <- rr
     form <- simplify_to_formula(x, lhs = lhs, rhs = rhs)
+
+    ## call traditional terms()
+    mt <- terms(form, ...)
+
+    ## store updating for future reference (e.g., in model.part)
+    attr(mt, "Formula_with_dot") <- x_orig
+    attr(mt, "Formula_without_dot") <- x
+    attr(mt, "dot") <- dot
+  } else {
+    ## call traditional terms()
+    mt <- terms(form, ...)
   }
   
-  ## call traditional terms()
-  terms(form, ...)
+  return(mt)
 }
 
 model.frame.Formula <- function(formula, data = NULL, ..., lhs = NULL, rhs = NULL, dot = "separate")
@@ -174,7 +142,7 @@ model.part.formula <- function(formula, data, ..., drop = FALSE) {
   NextMethod()
 }
 
-model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, terms = FALSE, dot = "separate", ...) {
+model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, terms = FALSE, dot = NULL, ...) {
 
   ## *hs = NULL: keep all parts
   if(is.null(lhs)) lhs <- 1L:length(attr(object, "lhs"))
@@ -183,6 +151,26 @@ model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ter
   if(isTRUE(all.equal(as.numeric(lhs), rep(0, length(lhs)))) &
      isTRUE(all.equal(as.numeric(rhs), rep(0, length(rhs)))))
     stop("Either some 'lhs' or 'rhs' has to be selected.")
+
+  if(is.null(dot)) {
+    if(is.null(attr(attr(data, "terms"), "dot"))) {
+      dot <- "separate"
+    } else {
+      dot <- attr(attr(data, "terms"), "dot")
+    }
+  } else {
+    dot <- match.arg(dot, c("separate", "sequential"))
+  }
+
+  ##
+  if(has_dot(object) &&
+     !is.null(attr(data, "terms")) &&
+     all(c("Formula_with_dot", "Formula_without_dot", "dot") %in% names(attributes(attr(data, "terms")))) &&
+     dot == attr(attr(data, "terms"), "dot") &&
+     simplify_to_formula(object, lhs = lhs, rhs = rhs) == simplify_to_formula(attr(attr(data, "terms"), "Formula_with_dot"), lhs = lhs, rhs = rhs)
+  ) {
+    object <- attr(attr(data, "terms"), "Formula_without_dot")
+  }
 
   ## construct auxiliary terms object
   mt <- terms(object, lhs = lhs, rhs = rhs, dot = dot, data = data)
@@ -367,3 +355,50 @@ paste_formula <- function(lhs, rhs, lsep = "|", rsep = "|") {
   c_formula(lval, rval, sep = "~")
 }
 
+## simplify a Formula to a formula that can be processed with
+## terms/model.frame etc.
+simplify_to_formula <- function(Formula, lhs = NULL, rhs = NULL) {
+
+  ## get desired subset as formula and Formula
+  form <- formula(Formula, lhs = lhs, rhs = rhs)
+  Form <- Formula(form)
+
+  ## convenience functions for checking extended features
+  is_lhs_extended <- function(Formula) {
+    ## check for multiple parts
+    if(length(attr(Formula, "lhs")) > 1L) {
+      return(TRUE)
+    } else {
+    ## and multiple responses
+      if(length(attr(Formula, "lhs")) < 1L) return(FALSE)
+      return(length(attr(terms(paste_formula(NULL,
+        attr(Formula, "lhs"), rsep = "+")), "term.labels")) > 1L)
+    }
+  }
+
+  is_rhs_extended <- function(Formula) {
+    ## check for muliple parts
+    length(attr(Formula, "rhs")) > 1L
+  }
+
+  ## simplify (if necessary)
+  ext_lhs <- is_lhs_extended(Form)
+  if(ext_lhs | is_rhs_extended(Form)) {
+    form <- if(ext_lhs) {
+      if(length(attr(Form, "rhs")) == 1L & identical(attr(Form, "rhs")[[1L]], 0)) {
+	paste_formula(NULL, attr(Form, "lhs"), rsep = "+")    
+      } else {
+        paste_formula(NULL, c(attr(Form, "lhs"), attr(Form, "rhs")), rsep = "+")
+      }
+    } else {
+      paste_formula(attr(Form, "lhs"), attr(Form, "rhs"), rsep = "+")	 
+    }
+  }
+
+  ## re-attach original environment and return
+  environment(form) <- environment(Formula)
+  return(form)
+}
+
+## check whether formula has a dot (FIXME: can other problems than just '.' occur?)
+has_dot <- function(formula) inherits(try(terms(formula), silent = TRUE), "try-error")

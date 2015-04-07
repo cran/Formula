@@ -263,20 +263,28 @@ attr(,"contrasts")$x4
 
 > 
 > ## set up Formula with multiple '.'
-> F3 <- Formula(y1 | y2 | y3 ~ . - x3 - x4 | .)
-> mf3 <- model.frame(F3, data = dat)
+> F3 <- Formula(y1 | y2 | log(y3) ~ . - x3 - x4 | .)
+> ## process both '.' separately (default)
+> mf3 <- model.frame(F3, data = dat, dot = "separate")
 > ## only x1-x2
 > model.part(F3, data = mf3, rhs = 1)
     x1   x2
 2 0.26 0.46
 3 0.03 0.37
-> ## all x1-x4 because '.' is processed separately (default)
-> model.part(F3, data = mf3, rhs = 2, dot = "separate")
+> ## all x1-x4
+> model.part(F3, data = mf3, rhs = 2)
     x1   x2 x3 x4
 2 0.26 0.46  a  a
 3 0.03 0.37  b  b
-> ## only x3-x4 because '.' is processed sequentally after first RHS
-> model.part(F3, data = mf3, rhs = 2, dot = "sequential")
+> ## process the '.' sequentially, i.e., the second RHS conditional on the first
+> mf3 <- model.frame(F3, data = dat, dot = "sequential")
+> ## only x1-x2
+> model.part(F3, data = mf3, rhs = 1)
+    x1   x2
+2 0.26 0.46
+3 0.03 0.37
+> ## only x3-x4
+> model.part(F3, data = mf3, rhs = 2)
   x3 x4
 2  a  a
 3  b  b
@@ -312,7 +320,7 @@ attr(,"contrasts")$x4
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  0.252 0.008 0.261 0 0 
+Time elapsed:  0.3 0.004 0.306 0 0 
 > grDevices::dev.off()
 null device 
           1 
