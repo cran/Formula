@@ -1,5 +1,7 @@
 Formula <- function(object) {
 
+  if(inherits(object, "Formula")) return(object)
+
   stopifnot(inherits(object, "formula"))
 
   object_split <- split_formula(object)
@@ -202,8 +204,8 @@ update.Formula <- function(object, new,...) {
   o_rhs <- attr(object, "rhs")
   n_lhs <- attr(new, "lhs")
   n_rhs <- attr(new, "rhs")
-  lhs <- rep(list(NULL), length = max(length(o_lhs), length(n_lhs)))
-  rhs <- rep(list(NULL), length = max(length(o_rhs), length(n_rhs)))
+  lhs <- rep(list(NULL), length.out = max(length(o_lhs), length(n_lhs)))
+  rhs <- rep(list(NULL), length.out = max(length(o_rhs), length(n_rhs)))
 
   ## convenience function for updating components
   update_components <- function(x, y) {

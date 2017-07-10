@@ -1,3 +1,12 @@
+Changes in Version 1.2-2
+
+  o Enhance Formula() so that if a "Formula" is supplied it is simply
+    returned unchanged (rather than throwing a warning).
+
+  o Enhance update() method for "Formula" object so that also the "new"
+    formula can be a "Formula" object.
+
+
 Changes in Version 1.2-1
 
   o Bug fix for formulas with transformed variables on the left-hand
