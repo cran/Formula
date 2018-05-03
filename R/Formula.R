@@ -93,7 +93,7 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL, dot = "separate")
   ## if necessary try to expand/update/simplify formula parts with dot
   if(has_dot(form)) {
     x_orig <- x
-    dot <- match.arg(dot, c("separate", "sequential"))
+    dot <- match.arg(dot, c("separate", "sequential", "previous"))
 
     ## lhs and rhs calls
     ll <- formula(x, rhs = 0L, collapse = TRUE)[[2L]]
@@ -103,7 +103,11 @@ terms.Formula <- function(x, ..., lhs = NULL, rhs = NULL, dot = "separate")
     for(i in seq_along(rr)) {
       if(dot == "sequential" && i > 1L) ll <- c_formula(ll, rr[[i - 1L]], sep = "+")
       fi <- paste_formula(ll, rr[[i]]) #probably better than:# paste_formula(NULL, c_formula(rr[[i]], ll, sep = "-"))
-      rr[[i]] <- update(formula(terms(fi, ...)), . ~ .)[[3L]]
+      rr[[i]] <- if(dot == "previous" && i > 1L) {      
+	update(paste_formula(ll, rr[[i - 1]]), fi)[[3L]]
+      } else {
+        update(formula(terms(fi, ...)), . ~ .)[[3L]]
+      }
     }
     attr(x, "rhs") <- rr
     form <- simplify_to_formula(x, lhs = lhs, rhs = rhs)
@@ -130,8 +134,12 @@ model.frame.Formula <- function(formula, data = NULL, ..., lhs = NULL, rhs = NUL
 
 model.matrix.Formula <- function(object, data = environment(object), ..., lhs = NULL, rhs = 1, dot = "separate")
 {
-  form <- formula(object, lhs = lhs, rhs = rhs, collapse = c(FALSE, TRUE))
-  mt <- delete.response(terms(form, data = data, dot = dot))
+  if(dot == "separate") {
+    form <- formula(object, lhs = lhs, rhs = rhs, collapse = c(FALSE, TRUE))
+    mt <- delete.response(terms(form, data = data))
+  } else {
+    mt <- delete.response(terms(object, lhs = lhs, rhs = rhs, dot = dot))
+  }
   model.matrix(mt, data = data, ...)
 }
 
@@ -161,7 +169,7 @@ model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ter
       dot <- attr(attr(data, "terms"), "dot")
     }
   } else {
-    dot <- match.arg(dot, c("separate", "sequential"))
+    dot <- match.arg(dot, c("separate", "sequential", "previous"))
   }
 
   ##
@@ -182,7 +190,7 @@ model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ter
   if(is.null(ix)) {
     ix <- 0
   } else {
-    ix <- sapply(ix, deparse)
+    ix <- sapply(ix, deparse, width.cutoff = 500L) ## for width beyond 500: paste(..., collapse = "") ?
     if(!all(ix %in% names(data))) stop(
       paste("'data' does not seem to be an appropriate 'model.frame':",
       paste(paste("'", ix[!(ix %in% names(data))], "'", sep = ""), collapse = ", "),

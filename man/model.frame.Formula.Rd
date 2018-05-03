@@ -36,9 +36,10 @@ model.part(object, \dots)
     corresponds to all parts, \code{0} to none. At least one \code{lhs} or
     one \code{rhs} has to be specified.}
   \item{dot}{character specifying how to process formula parts with a dot
-    (\code{.}) on the right-hand side. This can either be \code{"separate"}
-    so that each formula part is expanded separately or \code{"sequential"}
-    so that the parts are expanded sequentially conditional on all prior parts.}
+    (\code{.}) on the right-hand side. This can be: \code{"separate"}
+    so that each formula part is expanded separately. \code{"sequential"}
+    so that the parts are expanded sequentially conditional on all prior parts.
+    \code{"previous"} so the part is expanded to the previous part.}
   \item{drop}{logical. Should the \code{data.frame} be dropped for single
     column data frames?}
   \item{terms}{logical. Should the \code{"terms"} attribute (corresponding to
@@ -168,11 +169,19 @@ mf3 <- model.frame(F3, data = dat, dot = "separate")
 model.part(F3, data = mf3, rhs = 1)
 ## all x1-x4
 model.part(F3, data = mf3, rhs = 2)
+
 ## process the '.' sequentially, i.e., the second RHS conditional on the first
 mf3 <- model.frame(F3, data = dat, dot = "sequential")
 ## only x1-x2
 model.part(F3, data = mf3, rhs = 1)
 ## only x3-x4
+model.part(F3, data = mf3, rhs = 2)
+
+## process the second '.' using the previous RHS element
+mf3 <- model.frame(F3, data = dat, dot = "previous")
+## only x1-x2
+model.part(F3, data = mf3, rhs = 1)
+## x1-x2 again
 model.part(F3, data = mf3, rhs = 2)
 
 ##############################

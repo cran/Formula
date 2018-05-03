@@ -1,11 +1,13 @@
 
-R version 3.1.2 (2014-10-31) -- "Pumpkin Helmet"
-Copyright (C) 2014 The R Foundation for Statistical Computing
+R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+Copyright (C) 2018 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -276,6 +278,7 @@ attr(,"contrasts")$x4
     x1   x2 x3 x4
 2 0.26 0.46  a  a
 3 0.03 0.37  b  b
+> 
 > ## process the '.' sequentially, i.e., the second RHS conditional on the first
 > mf3 <- model.frame(F3, data = dat, dot = "sequential")
 > ## only x1-x2
@@ -288,6 +291,19 @@ attr(,"contrasts")$x4
   x3 x4
 2  a  a
 3  b  b
+> 
+> ## process the second '.' using the previous RHS element
+> mf3 <- model.frame(F3, data = dat, dot = "previous")
+> ## only x1-x2
+> model.part(F3, data = mf3, rhs = 1)
+    x1   x2
+2 0.26 0.46
+3 0.03 0.37
+> ## x1-x2 again
+> model.part(F3, data = mf3, rhs = 2)
+    x1   x2
+2 0.26 0.46
+3 0.03 0.37
 > 
 > ##############################
 > ## Process multiple offsets ##
@@ -320,7 +336,7 @@ attr(,"contrasts")$x4
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  0.3 0.004 0.306 0 0 
+Time elapsed:  0.238 0.012 0.249 0 0 
 > grDevices::dev.off()
 null device 
           1 

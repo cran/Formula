@@ -1,3 +1,15 @@
+Changes in Version 1.2-3
+
+  o Extended processing of formulas with one or more '.' on the
+    right-hand side: In addition to "separate" and "sequential" processing,
+    there is now dot="previous" which resolves the '.' relative to
+    the previous right-hand side part.
+
+  o model.part() failed in case of variables/terms with very long
+    names. Now deparse(..., width.cutoff = 500) is used to support
+    very long variable names as well.
+
+
 Changes in Version 1.2-2
 
   o Enhance Formula() so that if a "Formula" is supplied it is simply
