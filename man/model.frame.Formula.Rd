@@ -88,7 +88,7 @@ model.part(object, \dots)
 \references{
 Zeileis A, Croissant Y (2010). Extended Model Formulas in R: Multiple Parts and Multiple Responses.
   \emph{Journal of Statistical Software}, \bold{34}(1), 1--13.
-  \url{http://www.jstatsoft.org/v34/i01/}.
+  \doi{10.18637/jss.v034.i01}
 }
 
 \seealso{\code{\link{Formula}},  \code{\link[stats]{model.frame}},

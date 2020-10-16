@@ -173,9 +173,9 @@ model.part.Formula <- function(object, data, lhs = 0, rhs = 0, drop = FALSE, ter
   }
 
   ##
-  if(has_dot(object) &&
-     !is.null(attr(data, "terms")) &&
+  if(!is.null(attr(data, "terms")) &&
      all(c("Formula_with_dot", "Formula_without_dot", "dot") %in% names(attributes(attr(data, "terms")))) &&
+     has_dot(object) &&
      dot == attr(attr(data, "terms"), "dot") &&
      simplify_to_formula(object, lhs = lhs, rhs = rhs) == simplify_to_formula(attr(attr(data, "terms"), "Formula_with_dot"), lhs = lhs, rhs = rhs)
   ) {
