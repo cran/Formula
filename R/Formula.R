@@ -138,7 +138,7 @@ model.matrix.Formula <- function(object, data = environment(object), ..., lhs = 
     form <- formula(object, lhs = lhs, rhs = rhs, collapse = c(FALSE, TRUE))
     mt <- delete.response(terms(form, data = data))
   } else {
-    mt <- delete.response(terms(object, lhs = lhs, rhs = rhs, dot = dot))
+    mt <- delete.response(terms(object, lhs = lhs, rhs = rhs, dot = dot, data = data))
   }
   model.matrix(mt, data = data, ...)
 }
@@ -412,3 +412,6 @@ simplify_to_formula <- function(Formula, lhs = NULL, rhs = NULL) {
 
 ## check whether formula has a dot (FIXME: can other problems than just '.' occur?)
 has_dot <- function(formula) inherits(try(terms(formula), silent = TRUE), "try-error")
+
+## check whether formula _part_ has a remaining `~`
+has_tilde <- function(part) inherits(part, "call") && (part[[1]] == "~")
